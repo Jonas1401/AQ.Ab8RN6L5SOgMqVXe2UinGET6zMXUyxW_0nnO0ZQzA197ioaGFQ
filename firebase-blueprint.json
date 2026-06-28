@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile for port drivers",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "role": { "type": "string" },
+        "online": { "type": "boolean" },
+        "lastActive": { "type": "integer" }
+      },
+      "required": ["uid", "displayName", "avatarUrl", "role"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message inside port channels",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatar": { "type": "string" },
+        "userRole": { "type": "string" },
+        "text": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "audioDuration": { "type": "integer" },
+        "createdAt": { "type": "integer" },
+        "edited": { "type": "boolean" },
+        "replyTo": { "type": "object" }
+      },
+      "required": ["userId", "userName", "userAvatar", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profiles"
+    },
+    "channels/{channelId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Stores chat messages for channels"
+    }
+  }
+}

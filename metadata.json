@@ -1,0 +1,10 @@
+{
+  "name": "Porto Conecta",
+  "description": "Aplicativo de comunicação premium e exclusivo para motoristas de operações portuárias com canais em tempo real e gravador de áudio interativo.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
