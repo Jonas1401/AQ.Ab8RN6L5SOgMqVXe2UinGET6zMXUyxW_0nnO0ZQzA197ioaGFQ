@@ -153,29 +153,14 @@ interface StatusImageDoc {
   deletedUsersInCycle?: Record<string, boolean>;
 }
 
-const PORT_AND_TRUCK_IMAGES = [
-  { name: 'Caminhão na Estrada', url: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=1200', desc: 'Caminhão pesado de carga dourada na rodovia' },
-  { name: 'Estrada de Montanha', url: 'https://images.unsplash.com/photo-1565192647048-f997ded879f9?auto=format&fit=crop&q=80&w=1200', desc: 'Caminhão de carga subindo a serra ao entardecer' },
-  { name: 'Terminal Logístico', url: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=1200', desc: 'Caminhões operando em doca de centro de distribuição' },
-  { name: 'Caminhão de Alta Carga', url: 'https://images.unsplash.com/photo-1574068468668-a05a11f871da?auto=format&fit=crop&q=80&w=1200', desc: 'Transportador pesado rodando na autoestrada' },
-  { name: 'Potência na Rodovia', url: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&q=80&w=1200', desc: 'Caminhão moderno com faróis acesos em alta velocidade' },
-  { name: 'Frota de Reposição', url: 'https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&q=80&w=1200', desc: 'Vários caminhões alinhados no centro logístico' },
-  { name: 'Gigante Rodoviário', url: 'https://images.unsplash.com/photo-1518384401463-d387dd165dbf?auto=format&fit=crop&q=80&w=1200', desc: 'Caminhão clássico americano cruzando a estrada' },
-  { name: 'Caminhão Azul de Carga', url: 'https://images.unsplash.com/photo-1590502593747-42a996133562?auto=format&fit=crop&q=80&w=1200', desc: 'Cavalo mecânico moderno estacionado para embarque' },
-  { name: 'Carga Expressa', url: 'https://images.unsplash.com/photo-1582201942988-13e60e4556ee?auto=format&fit=crop&q=80&w=1200', desc: 'Caminhão baú vermelho em rota de entrega interestadual' },
-  { name: 'Operação Crepúsculo', url: 'https://images.unsplash.com/photo-1508962914676-134849a727f0?auto=format&fit=crop&q=80&w=1200', desc: 'Caminhão de reabastecimento logístico na estrada ao anoitecer' }
-];
+import LOGO_PORTO from '../assets/logo_porto.png';
 
-const DEFAULT_IMAGE = PORT_AND_TRUCK_IMAGES[0].url;
+const PORT_AND_TRUCK_IMAGES: { name: string; url: string; desc: string }[] = [];
+
+const DEFAULT_IMAGE = LOGO_PORTO;
 
 function getCycleDefaultImage(cycleId: string): string {
-  if (!cycleId) return PORT_AND_TRUCK_IMAGES[0].url;
-  let hash = 0;
-  for (let i = 0; i < cycleId.length; i++) {
-    hash += cycleId.charCodeAt(i);
-  }
-  const index = hash % PORT_AND_TRUCK_IMAGES.length;
-  return PORT_AND_TRUCK_IMAGES[index].url;
+  return LOGO_PORTO;
 }
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
