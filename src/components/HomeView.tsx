@@ -1024,6 +1024,7 @@ create table if not exists messages (
 
   const handleSaveStagedImage = async () => {
     if (!stagedImage) return;
+
     if (!canPublishStatus) {
       alert(`Você não tem permissão para publicar uma imagem neste ciclo.`);
       handleCancelStaged();
