@@ -2316,8 +2316,7 @@ create table if not exists messages (
                       { id: 'status', label: 'Status Porto', icon: Camera, color: 'text-amber-500' },
                       { id: 'users', label: 'Usuários', icon: Users, color: 'text-blue-500' },
                       { id: 'bans', label: 'Banimentos', icon: Ban, color: 'text-rose-500' },
-                      { id: 'announcements', label: 'Avisos', icon: Megaphone, color: 'text-teal-500' },
-                      { id: 'supabase', label: 'Supabase DB', icon: Database, color: 'text-emerald-500' }
+                      { id: 'announcements', label: 'Avisos', icon: Megaphone, color: 'text-teal-500' }
                     ].map((tab) => {
                       const Icon = tab.icon;
                       const isActive = adminTab === tab.id;
@@ -3068,135 +3067,6 @@ create table if not exists messages (
                         ) : (
                           <p className="text-[10px] text-gray-500 italic">Nenhuma notificação ativa nos dispositivos.</p>
                         )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 6. SUPABASE TAB */}
-                  {adminTab === 'supabase' && (
-                    <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
-                      {/* Database Provider Selection */}
-                      <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3.5">
-                        <div>
-                          <p className="text-[10px] font-bold text-teal-400 uppercase tracking-wider">PROVEDOR DE BANCO DE DADOS</p>
-                          <p className="text-[9px] text-gray-400 mt-1">Escolha se o aplicativo deve rodar em modo local (offline/emulado) ou conectado à nuvem do Supabase.</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 mt-1">
-                          <button
-                            onClick={() => {
-                              if (getDbProvider() !== 'local') {
-                                if (confirm('Mudar para o Provedor Local? O aplicativo será recarregado e usará armazenamento local sincronizado.')) {
-                                  setDbProvider('local');
-                                }
-                              }
-                            }}
-                            className={`p-3 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
-                              getDbProvider() === 'local'
-                                ? 'bg-teal-500/10 border-teal-500 text-white shadow-lg shadow-teal-500/5'
-                                : 'bg-black/40 border-white/5 hover:border-white/10 text-gray-400'
-                            }`}
-                          >
-                            <p className="text-[11px] font-bold uppercase tracking-wider">💻 Emulador Local</p>
-                            <p className="text-[8px] text-gray-500 mt-0.5 font-medium leading-relaxed">100% funcional por padrão, salva no navegador e sincroniza abas em tempo real. Não requer configuração externa.</p>
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (getDbProvider() !== 'supabase') {
-                                if (confirm('Mudar para o Provedor Supabase? Certifique-se de que configurou o banco de dados e rodou o SQL fornecido abaixo.')) {
-                                  setDbProvider('supabase');
-                                }
-                              }
-                            }}
-                            className={`p-3 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
-                              getDbProvider() === 'supabase'
-                                ? 'bg-emerald-500/10 border-emerald-500 text-white shadow-lg shadow-emerald-500/5'
-                                : 'bg-black/40 border-white/5 hover:border-white/10 text-gray-400'
-                            }`}
-                          >
-                            <p className="text-[11px] font-bold uppercase tracking-wider">☁ Supabase Cloud</p>
-                            <p className="text-[8px] text-gray-500 mt-0.5 font-medium leading-relaxed">Conexão real na nuvem do Supabase para sincronizar entre diferentes dispositivos. Requer execução das tabelas SQL.</p>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">STATUS DA CONEXÃO SUPABASE</p>
-                          <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
-                            !supabaseStatus.checked 
-                              ? 'bg-gray-500/10 text-gray-400 border border-gray-500/20' 
-                              : supabaseStatus.success 
-                                ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
-                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                          }`}>
-                            {!supabaseStatus.checked ? 'NÃO VERIFICADO' : supabaseStatus.success ? 'CONECTADO' : 'ERRO'}
-                          </span>
-                        </div>
-
-                        <div className="bg-black/20 p-3 rounded-xl border border-white/5 text-[11px] leading-relaxed">
-                          {checkingSupabase ? (
-                            <div className="flex items-center gap-2 text-gray-400">
-                              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              <span>Pingando banco de dados Supabase...</span>
-                            </div>
-                          ) : supabaseStatus.checked ? (
-                            <div className="space-y-1">
-                              <p className={`font-semibold ${supabaseStatus.success ? 'text-green-400' : 'text-red-400'}`}>
-                                {supabaseStatus.success ? '✓ Sucesso' : '✗ Falha na Conexão'}
-                              </p>
-                              <p className="text-gray-400 text-[10px]">{supabaseStatus.message}</p>
-                            </div>
-                          ) : (
-                            <p className="text-gray-500 italic">Clique no botão abaixo para testar as credenciais e status de conexão das tabelas do Supabase.</p>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={async () => {
-                            setCheckingSupabase(true);
-                            try {
-                              const res = await testSupabaseConnection();
-                              setSupabaseStatus({ checked: true, success: res.success, message: res.message });
-                            } catch (err: any) {
-                              setSupabaseStatus({ checked: true, success: false, message: err?.message || String(err) });
-                            } finally {
-                              setCheckingSupabase(false);
-                            }
-                          }}
-                          disabled={checkingSupabase}
-                          className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider cursor-pointer transition flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50"
-                        >
-                          <RefreshCw size={12} className={checkingSupabase ? 'animate-spin' : ''} />
-                          <span>Testar Conexão Supabase</span>
-                        </button>
-                      </div>
-
-                      {/* SQL Setup Instructions */}
-                      <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
-                        <div className="flex justify-between items-center">
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">RODAR SCRIPT SQL NO SUPABASE</p>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(SUPABASE_SQL_SETUP);
-                              setSqlCopied(true);
-                              setTimeout(() => setSqlCopied(false), 2000);
-                            }}
-                            className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[9px] font-bold text-gray-300 flex items-center gap-1 transition-all cursor-pointer active:scale-95"
-                          >
-                            {sqlCopied ? <Check size={10} className="text-green-400" /> : <Copy size={10} />}
-                            <span>{sqlCopied ? 'Copiado!' : 'Copiar SQL'}</span>
-                          </button>
-                        </div>
-                        
-                        <p className="text-[10px] text-gray-400 leading-relaxed">
-                          Acesse o painel do seu projeto no Supabase, abra o <b>SQL Editor</b>, crie um novo arquivo de consulta, cole o script abaixo e clique em <b>Run</b> para criar a estrutura de banco de dados:
-                        </p>
-
-                        <div className="relative">
-                          <pre className="p-3 bg-black/50 text-[9px] font-mono text-gray-400 border border-white/5 rounded-xl overflow-x-auto h-48 scrollbar-thin leading-normal select-text">
-                            {SUPABASE_SQL_SETUP}
-                          </pre>
-                        </div>
                       </div>
                     </div>
                   )}
