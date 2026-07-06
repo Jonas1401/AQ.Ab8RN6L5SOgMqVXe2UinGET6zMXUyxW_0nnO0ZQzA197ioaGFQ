@@ -155,10 +155,10 @@ interface StatusImageDoc {
 
 const PORT_AND_TRUCK_IMAGES: { name: string; url: string; desc: string }[] = [];
 
-const DEFAULT_IMAGE = '/logo_porto.png';
+const DEFAULT_IMAGE = '/logo_porto.png?v=2';
 
 function getCycleDefaultImage(cycleId: string): string {
-  return '/logo_porto.png';
+  return '/logo_porto.png?v=2';
 }
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;

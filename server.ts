@@ -19,7 +19,7 @@ const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1601584115197-04ecc0da3
 const PORT_AND_TRUCK_IMAGES: { name: string; url: string; desc: string }[] = [];
 
 function getCycleDefaultImage(cycleId: string): string {
-  return '/logo_porto.png';
+  return '/logo_porto.png?v=2';
 }
 
 const CACHE_FILE = path.join(process.cwd(), 'status_cache.json');
