@@ -1,0 +1,42 @@
+{
+  "name": "Porto Fácil",
+  "short_name": "Porto Fácil",
+  "description": "Plataforma profissional de logística, comunicação e utilitários para motoristas de porto.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07111F",
+  "theme_color": "#FF7A00",
+  "orientation": "portrait",
+  "categories": ["utilities", "productivity", "communication"],
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tickets",
+      "url": "/?shortcut=tickets",
+      "description": "Acesse a calculadora de tickets de carga"
+    },
+    {
+      "name": "Organizador",
+      "url": "/?shortcut=organizador",
+      "description": "Organizador pessoal de tarefas"
+    },
+    {
+      "name": "Emergência",
+      "url": "/?shortcut=emergencia",
+      "description": "Contatos rápidos de socorro e emergência"
+    }
+  ]
+}

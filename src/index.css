@@ -137,3 +137,30 @@
 .animate-pulse-glow {
   animation: pulseGlow 3s infinite ease-in-out;
 }
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Rain fall keyframe animations for weather widget */
+@keyframes fall {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.animate-fall {
+  animation: fall 1s linear infinite;
+}

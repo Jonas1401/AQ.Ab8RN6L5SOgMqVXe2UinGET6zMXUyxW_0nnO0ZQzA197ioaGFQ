@@ -1,5 +1,5 @@
 {
-  "name": "Porto Conecta",
+  "name": "Porto Fácil",
   "description": "Aplicativo de comunicação premium e exclusivo para motoristas de operações portuárias com canais em tempo real e gravador de áudio interativo.",
   "requestFramePermissions": [
     "microphone"

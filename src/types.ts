@@ -8,6 +8,7 @@ export interface UserProfile {
   displayName: string;
   avatarUrl: string;
   role: 'driver' | 'admin' | 'operator';
+  email?: string;
   online?: boolean;
   lastActive?: number;
 }
@@ -27,6 +28,7 @@ export interface Message {
   userName: string;
   userAvatar: string;
   userRole: string;
+  userEmail?: string;
   text: string;
   imageUrl?: string;
   audioUrl?: string; // Base64 or URL
@@ -44,9 +46,57 @@ export interface Message {
   candidatePhoto?: string;
   candidatePhone?: string;
   likes?: string[];
+  isComercioAd?: boolean;
+  businessName?: string;
+  businessPhone?: string;
+  isSticker?: boolean;
 }
 
 export interface PinnedMessage {
   text: string;
   channelId: string;
 }
+
+export interface OrganizerEvent {
+  id: string;
+  userId: string;
+  title: string;
+  date: string;
+  time: string;
+  description: string;
+  createdAt: number;
+}
+
+export interface OrganizerNote {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  createdAt: number;
+  color?: string; // Hex or bg class
+}
+
+export interface OrganizerChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+export interface OrganizerChecklist {
+  id: string;
+  userId: string;
+  title: string;
+  items: OrganizerChecklistItem[];
+  createdAt: number;
+}
+
+export interface TravelTicket {
+  id: string;
+  userId: string;
+  title: string;
+  date: string;
+  imageUrl: string; // Base64 high-resolution representation of the ticket
+  description?: string;
+  createdAt: number;
+}
+
