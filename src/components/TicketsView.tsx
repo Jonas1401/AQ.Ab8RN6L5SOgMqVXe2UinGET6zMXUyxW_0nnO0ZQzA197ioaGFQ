@@ -22,6 +22,15 @@ import {
   X,
   FileText
 } from 'lucide-react';
+import { 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  collection, 
+  addDoc,
+  db 
+} from '../lib/supabase';
 import Tesseract from 'tesseract.js';
 
 // Preprocess image to enhance contrast, sharpness, and correct legibility
@@ -474,7 +483,7 @@ export default function TicketsView({ userId, userName, userAvatar, onBack }: Ti
   };
 
   // Helper to re-save current active calculation to history
-  const saveCalculationToHistory = (calc: ParsedTicket) => {
+  const saveCalculationToHistory = async (calc: ParsedTicket) => {
     const driverGain = Number((calc.grossTotal * (percentage / 100)).toFixed(2));
     
     // Check if there is already an item in history with the exact same row structure or timestamp
@@ -498,6 +507,20 @@ export default function TicketsView({ userId, userName, userAvatar, onBack }: Ti
 
     setHistory(updatedHistory);
     localStorage.setItem('ganho-motorista-historico-v1', JSON.stringify(updatedHistory));
+
+    // Persist to Supabase
+    try {
+      await addDoc(collection(db, 'tickets'), {
+        user_id: userId,
+        title: `Ponto ${newItem.ponto}`,
+        date: new Date().toISOString(),
+        image_url: image || '',
+        description: `Total: ${formatBRL(newItem.grossTotal)} | Ganho: ${formatBRL(newItem.driverGain)}`,
+        created_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('Erro ao salvar ticket no Supabase:', err);
+    }
   };
 
   // Remove individual row from active calculation

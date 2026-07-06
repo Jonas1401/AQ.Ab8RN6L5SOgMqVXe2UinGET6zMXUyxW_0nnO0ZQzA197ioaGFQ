@@ -614,6 +614,18 @@ function normalizeDoc(table: string, row: any, userIdFromPath?: string) {
     };
   }
   
+  if (table === 'folguistas') {
+    return {
+      id: row.id,
+      name: row.name,
+      photoUrl: row.photo_url,
+      cnhCategory: row.cnh_category,
+      phone: row.phone,
+      registeredAt: row.registered_at ? new Date(row.registered_at).getTime() : Date.now(),
+      isActive: row.is_active
+    };
+  }
+  
   return row;
 }
 
@@ -737,6 +749,17 @@ async function writeToSupabase(path: string, data: any) {
         image_url: data.imageUrl,
         description: data.description || '',
         created_at: new Date(data.createdAt || Date.now()).toISOString()
+      }, { onConflict: 'id' });
+    }
+    else if (table === 'folguistas') {
+      await supabase.from('folguistas').upsert({
+        id: parsed.id,
+        name: data.name,
+        photo_url: data.photoUrl,
+        cnh_category: data.cnhCategory,
+        phone: data.phone,
+        registered_at: new Date(data.registeredAt || Date.now()).toISOString(),
+        is_active: data.isActive
       }, { onConflict: 'id' });
     }
   } catch (err) {
