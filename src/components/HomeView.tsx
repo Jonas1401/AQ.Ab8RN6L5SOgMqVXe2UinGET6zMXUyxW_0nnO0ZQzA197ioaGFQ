@@ -153,14 +153,12 @@ interface StatusImageDoc {
   deletedUsersInCycle?: Record<string, boolean>;
 }
 
-import LOGO_PORTO from '../assets/logo_porto.png';
-
 const PORT_AND_TRUCK_IMAGES: { name: string; url: string; desc: string }[] = [];
 
-const DEFAULT_IMAGE = LOGO_PORTO;
+const DEFAULT_IMAGE = '/logo_porto.png';
 
 function getCycleDefaultImage(cycleId: string): string {
-  return LOGO_PORTO;
+  return '/logo_porto.png';
 }
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
