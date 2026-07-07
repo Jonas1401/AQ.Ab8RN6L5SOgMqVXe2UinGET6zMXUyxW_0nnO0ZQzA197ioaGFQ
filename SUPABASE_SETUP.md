@@ -129,13 +129,24 @@ CREATE TABLE IF NOT EXISTS public.tickets (
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+-- =====================================================================
+-- 6. TABELA DE IMAGENS DE STATUS (Compartilhada)
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.status_images (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+    image_url TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+    created_by TEXT REFERENCES public.users(id) ON DELETE CASCADE,
+    is_active BOOLEAN DEFAULT true
+);
 ```
 
 ---
 
 ## 2. Habilitando Tempo Real (Realtime)
 
-Para que as mensagens do chat, curtidas, edições e banimentos reflitam instantaneamente na tela de todos os motoristas conectados, você **precisa ativar o Realtime** para as tabelas essenciais:
+Para que as mensagens do chat, curtidas, edições, banimentos e **novos Status de Imagens** reflitam instantaneamente na tela de todos os motoristas conectados, você **precisa ativar o Realtime** para as tabelas essenciais:
 
 1. No menu lateral do Supabase, vá em **Database** -> **Replication**.
 2. Clique na seção **Source** (geralmente chamada de `supabase_realtime`).
@@ -149,12 +160,13 @@ Para que as mensagens do chat, curtidas, edições e banimentos reflitam instant
    - `notes`
    - `checklists`
    - `tickets`
+   - `status_images`
 
 ---
 
 ## 3. Configurando Segurança (Row Level Security - RLS)
 
-A segurança em produção é crucial para que um motorista não consiga ler os tickets, notas ou checklists de outro motorista.
+A segurança em produção é crucial.
 
 Execute as seguintes políticas de segurança na aba **SQL Editor** do Supabase:
 
@@ -164,6 +176,7 @@ ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.checklists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.status_images ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de acesso para a tabela "events"
 CREATE POLICY "Usuários podem acessar somente seus próprios eventos"
@@ -184,6 +197,15 @@ CREATE POLICY "Usuários podem acessar somente suas próprias checklists"
 CREATE POLICY "Usuários podem acessar somente seus próprios tickets"
     ON public.tickets FOR ALL
     USING (auth.uid()::text = user_id);
+
+-- Políticas de acesso para a tabela "status_images"
+CREATE POLICY "Qualquer usuário autenticado pode ver os status"
+    ON public.status_images FOR SELECT
+    USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Motoristas podem inserir status"
+    ON public.status_images FOR INSERT
+    WITH CHECK (auth.role() = 'authenticated');
 
 -- Se você ativar RLS nas tabelas "messages" ou "reports", execute as políticas abaixo:
 

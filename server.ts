@@ -936,7 +936,7 @@ Sua tarefa é analisar o HTML da página de Line-Up da APPA e extrair os navios 
 
       const response = await callGeminiWithRetry(() =>
         ai.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-1.5-flash',
           contents: [
             {
               inlineData: {
