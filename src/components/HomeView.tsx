@@ -251,7 +251,6 @@ export default function HomeView({
   const [showNotifications, setShowNotifications] = useState(false);
   const [stagedImage, setStagedImage] = useState<string | null>(null);
   const [stagedYOffset, setStagedYOffset] = useState<number>(30);
-  const [isSavingStaged, setIsSavingStaged] = useState<boolean>(false);
   const [localActiveYOffset, setLocalActiveYOffset] = useState<number | null>(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
@@ -2037,14 +2036,20 @@ create table if not exists messages (
                       A imagem será exibida de forma fixa centralizada na área mais nítida do topo do aplicativo.
                     </p>
 
+                    {uploadError && (
+                      <p className="text-[10px] text-red-500 text-center bg-red-500/10 p-2 rounded-lg">
+                        {uploadError}
+                      </p>
+                    )}
+
                     {/* Action buttons */}
                     <div className="flex flex-col gap-2 mt-1">
                       <button
                         onClick={handleSaveStagedImage}
-                        disabled={isSavingStaged}
+                        disabled={isAnalyzing}
                         className="w-full py-3 bg-[#FF7A00] hover:bg-[#E06B00] active:scale-[0.98] disabled:opacity-50 text-white font-bold rounded-xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition duration-150 shadow-lg shadow-orange-500/20 cursor-pointer"
                       >
-                        {isSavingStaged ? (
+                        {isAnalyzing ? (
                           <>
                             <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                             <span>Salvando e Publicando...</span>
@@ -2058,7 +2063,7 @@ create table if not exists messages (
 
                       <button
                         onClick={handleCancelStaged}
-                        disabled={isSavingStaged}
+                        disabled={isAnalyzing}
                         className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-semibold rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition border border-white/5 cursor-pointer active:scale-[0.98]"
                       >
                         <span>Descartar e Voltar</span>
