@@ -165,16 +165,25 @@ async function saveStatusToDb(state: StatusState) {
   }
   
   if (dbClient) {
+    console.log('[Server Supabase] Attempting to upsert status_image to settings table...');
     try {
-      await dbClient
+      const { error } = await dbClient
         .from('settings')
         .upsert({
           id: 'status_image',
           value: state
         }, { onConflict: 'id' });
+      
+      if (error) {
+        console.error('[Server Supabase Error] Upsert failed:', error);
+      } else {
+        console.log('[Server Supabase] Successfully upserted status_image.');
+      }
     } catch (err) {
-      console.error('[Server Supabase Error] Failed to save status_image:', err);
+      console.error('[Server Supabase Error] Unexpected error during upsert:', err);
     }
+  } else {
+    console.error('[Server Supabase Error] dbClient is not initialized.');
   }
 }
 
