@@ -2079,12 +2079,12 @@ create table if not exists messages (
                       {/* Image preview of current app background */}
                       <div className="relative h-44 rounded-2xl overflow-hidden border border-white/10 bg-black/40 shadow-inner">
                         <img
-                          src={activeInfo.imageUrl}
+                          src={stagedImage || activeInfo.imageUrl}
                           className="w-full h-full object-cover transition-all duration-150"
                           style={{
                             objectPosition: `center ${statusImage?.yOffset ?? 50}%`
                           }}
-                          alt="Current background"
+                          alt="Background preview"
                           referrerPolicy="no-referrer"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />

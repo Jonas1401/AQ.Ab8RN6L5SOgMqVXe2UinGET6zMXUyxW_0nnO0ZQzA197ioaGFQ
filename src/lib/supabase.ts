@@ -47,10 +47,10 @@ export function updateSupabaseConfig(url: string, key: string) {
 export function getDbProvider(): 'local' | 'supabase' {
   try {
     const provider = localStorage.getItem('portoconecta_db_provider');
-    // Default to 'supabase' to ensure immediate cloud connectivity for everyone
-    return provider === 'local' ? 'local' : 'supabase';
+    // Default to 'local' for testing
+    return provider === 'supabase' ? 'supabase' : 'local';
   } catch (e) {
-    return 'supabase';
+    return 'local';
   }
 }
 
