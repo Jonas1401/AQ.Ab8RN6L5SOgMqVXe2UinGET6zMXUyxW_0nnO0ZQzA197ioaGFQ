@@ -28,6 +28,10 @@ const CACHE_FILE = path.join(process.cwd(), 'status_cache.json');
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const dbClient = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+if (!dbClient) {
+  console.error('[Server Supabase Error] dbClient not initialized. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+}
+
 
 interface StatusState {
   imageUrl: string;
@@ -169,7 +173,7 @@ async function saveStatusToDb(state: StatusState) {
           value: state
         }, { onConflict: 'id' });
     } catch (err) {
-      console.warn('[Server Supabase Error] Failed to save status_image:', err);
+      console.error('[Server Supabase Error] Failed to save status_image:', err);
     }
   }
 }
