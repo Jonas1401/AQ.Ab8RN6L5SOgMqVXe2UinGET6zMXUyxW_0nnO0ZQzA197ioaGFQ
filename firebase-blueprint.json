@@ -1,0 +1,32 @@
+{
+  "entities": {
+    "Setting": {
+      "title": "Setting",
+      "description": "App settings",
+      "type": "object",
+      "properties": {
+        "value": { "type": "object" }
+      },
+      "required": ["value"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "settings/{settingId}": {
+      "schema": "Setting",
+      "description": "Application settings"
+    },
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profile"
+    }
+  }
+}

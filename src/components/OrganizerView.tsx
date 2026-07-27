@@ -32,16 +32,18 @@ import {
   deleteDoc, 
   onSnapshot, 
   query, 
-  orderBy,
-  syncTicketToSupabase,
-  deleteTicketFromSupabase,
-  syncEventToSupabase,
-  deleteEventFromSupabase,
-  syncNoteToSupabase,
-  deleteNoteFromSupabase,
-  syncChecklistToSupabase,
-  deleteChecklistFromSupabase
-} from '../lib/supabase';
+  orderBy
+} from '../lib/db';
+import { 
+  syncTicketToFirestore as syncTicketToSupabase,
+  deleteTicketFromFirestore as deleteTicketFromSupabase,
+  syncEventToFirestore as syncEventToSupabase,
+  deleteEventFromFirestore as deleteEventFromSupabase,
+  syncNoteToFirestore as syncNoteToSupabase,
+  deleteNoteFromFirestore as deleteNoteFromSupabase,
+  syncChecklistToFirestore as syncChecklistToSupabase,
+  deleteChecklistFromFirestore as deleteChecklistFromSupabase
+} from '../lib/firestore_utils';
 import { 
   TravelTicket, 
   OrganizerEvent, 
@@ -248,7 +250,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
       const docRef = await addDoc(ticketsRef, newTicket);
       
       try {
-        await syncTicketToSupabase({
+        await syncTicketToSupabase(userId, {
           id: docRef.id,
           ...newTicket
         });
@@ -281,7 +283,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
         await deleteDoc(docRef);
         
         try {
-          await deleteTicketFromSupabase(id);
+          await deleteTicketFromSupabase(userId, id);
         } catch (sbErr) {
           console.warn('Supabase delete failed (ignored):', sbErr);
         }
@@ -468,7 +470,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
       const docRef = await addDoc(eventsRef, newEvent);
       
       try {
-        await syncEventToSupabase({
+        await syncEventToSupabase(userId, {
           id: docRef.id,
           ...newEvent
         });
@@ -497,7 +499,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
         await deleteDoc(doc(db, 'users', userId, 'events', id));
         
         try {
-          await deleteEventFromSupabase(id);
+          await deleteEventFromSupabase(userId, id);
         } catch (sbErr) {
           console.warn('Supabase delete failed (ignored):', sbErr);
         }
@@ -535,7 +537,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
       const docRef = await addDoc(notesRef, newNote);
       
       try {
-        await syncNoteToSupabase({
+        await syncNoteToSupabase(userId, {
           id: docRef.id,
           ...newNote
         });
@@ -564,7 +566,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
         await deleteDoc(doc(db, 'users', userId, 'notes', id));
         
         try {
-          await deleteNoteFromSupabase(id);
+          await deleteNoteFromSupabase(userId, id);
         } catch (sbErr) {
           console.warn('Supabase delete failed (ignored):', sbErr);
         }
@@ -617,7 +619,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
       const docRef = await addDoc(checklistsRef, newChecklist);
       
       try {
-        await syncChecklistToSupabase({
+        await syncChecklistToSupabase(userId, {
           id: docRef.id,
           ...newChecklist
         });
@@ -649,7 +651,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
       await setDoc(docRef, { items: updatedItems }, { merge: true });
       
       try {
-        await syncChecklistToSupabase({
+        await syncChecklistToSupabase(userId, {
           id: checklistId,
           userId,
           title: checklist.title,
@@ -676,7 +678,7 @@ export default function OrganizerView({ userId, userName, userAvatar, onBack }: 
         await deleteDoc(doc(db, 'users', userId, 'checklists', id));
         
         try {
-          await deleteChecklistFromSupabase(id);
+          await deleteChecklistFromSupabase(userId, id);
         } catch (sbErr) {
           console.warn('Supabase delete failed (ignored):', sbErr);
         }

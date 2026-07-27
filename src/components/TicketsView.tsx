@@ -30,7 +30,7 @@ import {
   collection, 
   addDoc,
   db 
-} from '../lib/supabase';
+} from '../lib/db';
 import Tesseract from 'tesseract.js';
 
 // Preprocess image to enhance contrast, sharpness, and correct legibility

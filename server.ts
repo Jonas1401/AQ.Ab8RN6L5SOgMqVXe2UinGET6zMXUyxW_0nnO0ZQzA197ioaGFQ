@@ -9,8 +9,8 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
 import fs from 'fs';
-import { createClient } from '@supabase/supabase-js';
 import * as cheerio from 'cheerio';
+
 
 dotenv.config();
 
@@ -24,13 +24,7 @@ function getCycleDefaultImage(cycleId: string): string {
 
 const CACHE_FILE = path.join(process.cwd(), 'status_cache.json');
 
-// Initialize Supabase Client for backend-side updates
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const dbClient = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
-if (!dbClient) {
-  console.error('[Server Supabase Error] dbClient not initialized. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
-}
+
 
 
 interface StatusState {
@@ -130,21 +124,6 @@ function getDefaultState(cycleId: string): StatusState {
 }
 
 async function getStatusFromDb(): Promise<StatusState | null> {
-  if (dbClient) {
-    try {
-      const { data, error } = await dbClient
-        .from('settings')
-        .select('*')
-        .eq('id', 'status_image')
-        .maybeSingle();
-      if (!error && data && data.value) {
-        return data.value as StatusState;
-      }
-    } catch (err) {
-      console.warn('[Server Supabase Error] Failed to read status_image:', err);
-    }
-  }
-  
   if (fs.existsSync(CACHE_FILE)) {
     try {
       const raw = fs.readFileSync(CACHE_FILE, 'utf-8');
@@ -163,29 +142,8 @@ async function saveStatusToDb(state: StatusState) {
   } catch (err) {
     console.warn('[Server Cache Error] Failed to write status_cache.json:', err);
   }
-  
-  if (dbClient) {
-    console.log('[Server Supabase] Attempting to upsert status_image to settings table...');
-    try {
-      const { error } = await dbClient
-        .from('settings')
-        .upsert({
-          id: 'status_image',
-          value: state
-        }, { onConflict: 'id' });
-      
-      if (error) {
-        console.error('[Server Supabase Error] Upsert failed:', error);
-      } else {
-        console.log('[Server Supabase] Successfully upserted status_image.');
-      }
-    } catch (err) {
-      console.error('[Server Supabase Error] Unexpected error during upsert:', err);
-    }
-  } else {
-    console.error('[Server Supabase Error] dbClient is not initialized.');
-  }
 }
+
 
 async function startServer() {
   const app = express();
@@ -884,13 +842,8 @@ Sua tarefa é analisar o HTML da página de Line-Up da APPA e extrair os navios 
     }
   });
 
-  // API Route to expose safe public config (Supabase URL/Anon key) to the client
-  app.get('/api/config', (req, res) => {
-    res.json({
-      supabaseUrl: process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      supabaseAnonKey: process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-    });
-  });
+  // API Route to monitor APPA (replaced with direct monitor above)
+
 
   // API Route to verify status image
   app.post('/api/verify-status-image', async (req, res) => {

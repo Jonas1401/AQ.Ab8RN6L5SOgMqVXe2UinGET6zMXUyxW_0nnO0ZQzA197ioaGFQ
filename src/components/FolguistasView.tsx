@@ -22,7 +22,7 @@ import {
   onSnapshot, 
   collection, 
   db 
-} from '../lib/supabase';
+} from '../lib/db';
 
 // SVG WhatsApp Icon for consistency
 const WhatsAppIcon = ({ size = 20, className = "" }: { size?: number; className?: string }) => (

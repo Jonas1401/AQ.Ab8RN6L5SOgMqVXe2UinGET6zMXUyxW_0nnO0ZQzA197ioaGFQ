@@ -8,15 +8,12 @@ import { motion } from 'motion/react';
 import { 
   auth, 
   db, 
-  handleDatabaseError, 
-  OperationType, 
-  syncUserProfileToSupabase,
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
   doc, 
   setDoc, 
   getDoc 
-} from '../lib/supabase';
+} from '../lib/db';
 import { Truck, Anchor, Shield, ArrowRight, Mail, Lock, Eye, EyeOff, User, CheckCircle2 } from 'lucide-react';
 
 interface LoginViewProps {
@@ -138,14 +135,6 @@ export default function LoginView({ onLoginComplete }: LoginViewProps) {
           await setDoc(doc(db, 'users', uid), profileData);
         } catch (dbErr) {
           console.warn('Erro ao salvar perfil:', dbErr);
-          handleDatabaseError(dbErr, OperationType.WRITE, `users/${uid}`);
-        }
-
-        // Sync user profile to Supabase
-        try {
-          await syncUserProfileToSupabase(profileData);
-        } catch (sbErr) {
-          console.warn('Supabase profile sync ignored/failed:', sbErr);
         }
       } else {
         // --- SIGN IN FLOW ---
@@ -199,12 +188,6 @@ export default function LoginView({ onLoginComplete }: LoginViewProps) {
             await setDoc(doc(db, 'users', uid), profileData);
           } catch (dbErr) {
             console.warn('Falha no fallback de salvar perfil:', dbErr);
-          }
-
-          try {
-            await syncUserProfileToSupabase(profileData);
-          } catch (sbErr) {
-            console.warn('Supabase fallback profile sync ignored/failed:', sbErr);
           }
         }
       }
@@ -471,7 +454,7 @@ export default function LoginView({ onLoginComplete }: LoginViewProps) {
             <div className="flex items-start gap-2 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-xl">
               <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={14} />
               <p className="text-[10px] text-emerald-400 leading-relaxed font-medium">
-                Seus dados (tickets, compromissos, notas e checklists) estão 100% seguros e sincronizados em tempo real na nuvem do <b>Supabase Postgres</b>.
+                Seus dados (tickets, compromissos, notas e checklists) estão 100% seguros e sincronizados em tempo real na nuvem do <b>Firebase Firestore</b>.
               </p>
             </div>
 

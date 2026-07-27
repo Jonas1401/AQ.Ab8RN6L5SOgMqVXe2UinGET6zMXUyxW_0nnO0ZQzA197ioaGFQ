@@ -10,20 +10,13 @@ import { WifiOff } from 'lucide-react';
 import { 
   auth, 
   db, 
-  handleDatabaseError, 
-  OperationType, 
   onAuthStateChanged, 
   signOut, 
   doc, 
   getDoc, 
   setDoc, 
-  collection, 
-  query, 
-  orderBy, 
-  limit, 
-  onSnapshot,
-  updateSupabaseConfig
-} from './lib/supabase';
+  onSnapshot 
+} from './lib/db';
 import { Channel } from './types';
 import LoginView from './components/LoginView';
 import HomeView from './components/HomeView';
@@ -32,6 +25,7 @@ import EmergencyView from './components/EmergencyView';
 import OrganizerView from './components/OrganizerView';
 import AppaView from './components/AppaView';
 import FolguistasView from './components/FolguistasView';
+import WeatherThemesDemo from './components/WeatherThemesDemo';
 
 const INITIAL_CHANNELS: Channel[] = [
   {
@@ -50,6 +44,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<Channel[]>(INITIAL_CHANNELS);
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
+  const [showThemesDemo, setShowThemesDemo] = useState(false);
 
   useEffect(() => {
     let activeUnsubscribe: (() => void) | null = null;
@@ -60,22 +55,20 @@ export default function App() {
         const res = await fetch('/api/config');
         if (res.ok) {
           const config = await res.json();
-          if (config.supabaseUrl && config.supabaseAnonKey) {
-            updateSupabaseConfig(config.supabaseUrl, config.supabaseAnonKey);
-          }
+          // Config is now managed via Firebase directly
         }
       } catch (err) {
-        console.warn('[App] Erro ao obter dados de config em tempo real:', err);
+        console.warn('[App] Erro ao obter dados de config:', err);
       }
 
       if (!isMounted) return;
 
       // 2. Listen to Supabase Auth state
-      const unsubscribe = onAuthStateChanged(auth, async (supabaseUser) => {
-        if (supabaseUser) {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
           try {
             // Fetch driver profile from Supabase
-            const userDoc = await getDoc(doc(db, 'users', supabaseUser.uid));
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
             if (userDoc.exists()) {
               const data = userDoc.data();
               const emailLower = (data.email || '').trim().toLowerCase();
@@ -99,7 +92,7 @@ export default function App() {
 
               // Check if user is banned by UID
               try {
-                const banUidDoc = await getDoc(doc(db, 'banned_uids', supabaseUser.uid));
+                const banUidDoc = await getDoc(doc(db, 'banned_uids', user.uid));
                 if (banUidDoc.exists()) {
                   console.warn('Sessão rejeitada: UID banido.');
                   await signOut(auth);
@@ -116,7 +109,7 @@ export default function App() {
               const userRole = isJonas ? 'admin' : (data.role || 'driver');
 
               const profile = {
-                uid: supabaseUser.uid,
+                uid: user.uid,
                 displayName: data.displayName || 'Motorista Anônimo',
                 avatarUrl: data.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
                 role: userRole as 'driver' | 'admin' | 'operator',
@@ -127,7 +120,7 @@ export default function App() {
             } else {
               // Fallback profile
               const profile = {
-                uid: supabaseUser.uid,
+                uid: user.uid,
                 displayName: 'Motorista',
                 avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
                 role: 'driver' as const,
@@ -138,7 +131,6 @@ export default function App() {
             }
           } catch (err) {
             console.error('Error fetching user profile:', err);
-            handleDatabaseError(err, OperationType.GET, `users/${supabaseUser.uid}`);
           }
         } else {
           // If there's no active user but we didn't log in locally either, sign out
@@ -320,6 +312,7 @@ export default function App() {
         email={user.email}
         channels={channels}
         onSelectChannel={handleSelectChannel}
+        onShowThemesDemo={() => setShowThemesDemo(true)}
         onLogout={handleLogout}
         onUpdateRole={(newRole) => {
           const updated = { ...user, role: newRole };
@@ -342,6 +335,7 @@ export default function App() {
 
   return (
     <>
+      {showThemesDemo && <WeatherThemesDemo onClose={() => setShowThemesDemo(false)} />}
       {activeContent}
       
       {/* Offline Status Overlay */}

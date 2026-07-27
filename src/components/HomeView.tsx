@@ -49,7 +49,8 @@ import {
   Check,
   Award,
   CheckSquare,
-  Database
+  Database,
+  FileText
 } from 'lucide-react';
 import { 
   doc, 
@@ -62,11 +63,8 @@ import {
   getDocs, 
   getDoc, 
   addDoc, 
-  db, 
-  testSupabaseConnection,
-  getDbProvider,
-  setDbProvider
-} from '../lib/supabase';
+  db 
+} from '../lib/db';
 import { Channel } from '../types';
 import EcgCanvas from './EcgCanvas';
 
@@ -135,6 +133,7 @@ interface HomeViewProps {
   onLogout: () => void;
   onUpdateRole: (newRole: 'driver' | 'admin' | 'operator') => void;
   onUpdateAvatar: (newAvatarUrl: string) => void;
+  onShowThemesDemo: () => void;
 }
 
 interface StatusImageDoc {
@@ -239,6 +238,7 @@ export default function HomeView({
   onLogout,
   onUpdateRole,
   onUpdateAvatar,
+  onShowThemesDemo,
 }: HomeViewProps) {
   const [statusImage, setStatusImage] = useState<StatusImageDoc | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -260,15 +260,14 @@ export default function HomeView({
   const [reportSentSuccess, setReportSentSuccess] = useState(false);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
 
-  // Validate Connection to Supabase on startup and handle offline / unavailable gracefully
+  // Validate Connection to Firebase on startup and handle offline / unavailable gracefully
   useEffect(() => {
     const testConnection = async () => {
       try {
-        const { getDocFromServer, doc } = await import('../lib/supabase');
-        await getDocFromServer(doc(db, 'settings', 'status_image'));
+        await getDoc(doc(db, 'settings', 'status_image'));
         setIsOfflineMode(false);
       } catch (error: any) {
-        console.warn('Supabase connection failed. Running in high-performance local fallback mode:', error);
+        console.warn('Firebase connection failed. Running in high-performance local fallback mode:', error);
         setIsOfflineMode(true);
       }
     };
@@ -401,7 +400,7 @@ export default function HomeView({
   
   // isStatusLocked is used to disable controls for other users
   const isStatusLocked = !isAdmin && !!(isStatusImageFromCurrentCycle && !statusImage.isDefault && statusImage.uploadedBy?.uid !== userId);
-  const [adminTab, setAdminTab] = useState<'reports' | 'status' | 'users' | 'bans' | 'announcements' | 'supabase'>('reports');
+  const [adminTab, setAdminTab] = useState<'reports' | 'status' | 'users' | 'bans' | 'announcements' | 'firebase'>('reports');
   const [usersList, setUsersList] = useState<any[]>([]);
   const [bannedEmailsList, setBannedEmailsList] = useState<any[]>([]);
   const [bannedUidsList, setBannedUidsList] = useState<any[]>([]);
@@ -439,9 +438,9 @@ export default function HomeView({
   const [newNotifMessage, setNewNotifMessage] = useState('');
   const [newNotifType, setNewNotifType] = useState<'info' | 'warning' | 'success' | 'alert'>('info');
 
-  // Supabase states
-  const [checkingSupabase, setCheckingSupabase] = useState(false);
-  const [supabaseStatus, setSupabaseStatus] = useState<{ checked: boolean; success: boolean; message: string }>({
+  // Firebase states
+  const [checkingFirebase, setCheckingFirebase] = useState(false);
+  const [firebaseStatus, setFirebaseStatus] = useState<{ checked: boolean; success: boolean; message: string }>({
     checked: false,
     success: false,
     message: ''
@@ -1288,68 +1287,16 @@ create table if not exists messages (
       <div className="w-full max-w-[430px] mx-auto z-10 px-5 flex flex-col justify-between flex-1 gap-2.5 sm:gap-4 h-full py-1 sm:py-3 overflow-hidden relative">
         
         {/* 1. TOP HEADER (PORTO CONECTA LOGO & NOTIFICATION/SETTINGS) */}
-        <header className="py-2.5 sm:py-4 flex items-center justify-between">
-          {/* Logo Hexágono Port Hub (Highly stylized wave-art hexagon gradient matching mockup) */}
-          <div className="flex items-center gap-3.5 select-none">
-            <svg 
-              className="w-11 h-11" 
-              style={{ filter: 'drop-shadow(0 0 12px var(--pc-glow))' }}
-              viewBox="0 0 100 100" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <linearGradient id="logo-hex-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="var(--pc-primary-light)" />
-                  <stop offset="100%" stopColor="var(--pc-primary-dark)" />
-                </linearGradient>
-                <linearGradient id="wave-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.45)" />
-                  <stop offset="50%" stopColor="rgba(255, 255, 255, 0.85)" />
-                  <stop offset="100%" stopColor="rgba(255, 255, 255, 0.35)" />
-                </linearGradient>
-              </defs>
-              {/* Hexagon background */}
-              <path d="M50 5 L89 27.5 L89 72.5 L50 95 L11 72.5 L11 27.5 Z" fill="url(#logo-hex-grad)" />
-              {/* Stylized waves inside hexagon at the bottom */}
-              <path d="M11 68 C 25 58, 45 74, 55 64 C 70 50, 80 62, 89 68 L89 72.5 L50 95 L11 72.5 Z" fill="url(#wave-grad)" />
-              {/* White 'P' letter */}
-              <text x="50" y="58" fill="white" fontSize="42" fontWeight="900" textAnchor="middle" fontFamily="'Inter', system-ui, sans-serif">P</text>
-            </svg>
-            <div className="flex flex-col">
-              <span className="text-[21px] font-extrabold tracking-[0.06em] text-white leading-none font-sans">PORTO</span>
-              <span className="text-xs font-black tracking-[0.16em] leading-none mt-1 font-sans theme-text">FÁCIL</span>
-              <span className="text-[9px] text-gray-400 font-medium mt-1 leading-none tracking-tight">Conecte. Informe. Mova o porto.</span>
-            </div>
+        <header className="py-6 flex items-center justify-between">
+          <div className="flex flex-col">
+            <h1 className="text-[34px] font-black text-white leading-none tracking-tighter">COPADUBO</h1>
+            <h2 className="text-xl font-medium text-white/90 mt-1">Acesso rápido</h2>
+            <p className="text-sm text-white/70 mt-1">Selecione um site para acessar</p>
           </div>
- 
-          {/* Botões do Topo (Bell and Gear styled as rounded squares with subtle transparency, plus share to WhatsApp) */}
-          <div className="flex items-center gap-2">
-            {/* Share/Compartilhar WhatsApp Button */}
-            <button
-              onClick={() => {
-                const appUrl = window.location.href;
-                const message = `Olá, motorista! 🚛\n\nConheça o novo aplicativo *Porto Fácil*! 🌟\nCriado para facilitar o seu dia a dia no porto com informações em tempo real:\n\n✅ *Acompanhamento de Caminhões ativos*\n✅ *Acesso rápido ao Portal Copadubo*\n✅ *Consulta de Informações da APPA*\n✅ *Suporte via WhatsApp dos plantões*\n✅ *Chat e Rádio integrados*\n\nAcesse agora mesmo e salve em sua tela inicial:\n${appUrl}`;
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-              }}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-green-500/5 hover:bg-green-500/15 border border-green-500/20 active:scale-95 transition cursor-pointer"
-              title="Compartilhar aplicativo no WhatsApp"
-            >
-              <Share2 size={17} className="text-green-400/90 hover:text-green-300 filter drop-shadow-[0_0_2px_rgba(34,197,94,0.3)]" />
-            </button>
- 
-            {/* Camera/Status Image Button */}
-            <button
-              onClick={() => setShowCameraPanel(true)}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 active:scale-95 transition relative cursor-pointer"
-              title="Postar foto de status"
-            >
-              <Camera size={18} className="text-gray-300 hover:text-white" />
-              {activeInfo.isActive && (
-                <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full animate-pulse theme-bg" style={{ boxShadow: '0 0 8px var(--pc-primary)' }} />
-              )}
-            </button>
+          
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex items-center gap-2 border border-white/10 shadow-lg">
+            <button onClick={onShowThemesDemo} className="text-white hover:text-orange-300 transition" title="Visualizar Temas">🎨</button>
+            <span className="text-lg font-semibold text-white">22°</span>
           </div>
         </header>
 
@@ -1419,8 +1366,7 @@ create table if not exists messages (
               <button 
                 onClick={async () => {
                   try {
-                    const { getDocFromServer, doc } = await import('../lib/supabase');
-                    await getDocFromServer(doc(db, 'settings', 'status_image'));
+                    await getDoc(doc(db, 'settings', 'status_image'));
                     setIsOfflineMode(false);
                   } catch (e) {
                     // still offline
@@ -1526,231 +1472,152 @@ create table if not exists messages (
 
 
 
-        {/* 4. OTHER CARDS GRID (Sits elegantly below the header status area, perfectly aligned) */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-2 sm:mt-4 my-1">
-
-          {/* Card 3: CAMINHÕES ATIVOS */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => window.open('https://intranet.copadubo.com.br/ponto/', '_blank')}
-            className="relative p-3 sm:p-3.5 h-[115px] sm:h-[130px] bg-[#030914]/15 backdrop-blur-xl border border-[var(--pc-primary)]/25 rounded-[20px] sm:rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.2),0_0_8px_var(--pc-glow)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.35),0_0_15px_var(--pc-glow)] flex flex-col justify-between cursor-pointer group overflow-hidden transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-[var(--pc-primary)]/5 to-transparent pointer-events-none" />
-
-            {/* Top Section */}
-            <div className="flex items-start gap-2.5 relative z-10 w-full">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] bg-green-500/10 border border-green-500/25 flex items-center justify-center text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.35)] shrink-0">
-                <Truck size={17} className="filter" style={{ filter: 'drop-shadow(0 0 3px #22C55E)' }} />
-              </div>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h4 className="text-[11px] sm:text-[12.5px] font-extrabold text-white tracking-wider uppercase leading-none">CAMINHÕES ATIVOS</h4>
-                <p className="text-[8.5px] sm:text-[9.5px] text-[#C5C5C5] mt-1 leading-tight font-medium">Caminhões em operation</p>
-              </div>
-            </div>
-
-            {/* Bottom Section */}
-            <div className="flex items-end justify-between relative z-10 mt-auto w-full">
-              <div className="px-2 py-0.5 rounded-full bg-[var(--pc-primary)]/10 border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] text-[8px] sm:text-[9px] font-bold tracking-wide shadow-[0_0_6px_var(--pc-glow)] shrink-0">
-                12 online
-              </div>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] group-hover:bg-[var(--pc-primary)]/15 group-hover:border-[var(--pc-primary-light)] group-hover:text-[var(--pc-primary-light)] transition-all flex items-center justify-center shrink-0">
-                <ChevronRight size={13} />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 4: LOGIN DO APP */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => window.open('https://portal.copadubo.com.br/login.php', '_blank')}
-            className="relative p-3 sm:p-3.5 h-[115px] sm:h-[130px] bg-[#030914]/15 backdrop-blur-xl border border-[var(--pc-primary)]/25 rounded-[20px] sm:rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.2),0_0_8px_var(--pc-glow)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.35),0_0_15px_var(--pc-glow)] flex flex-col justify-between cursor-pointer group overflow-hidden transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-[var(--pc-primary)]/5 to-transparent pointer-events-none" />
-
-            {/* Top Section */}
-            <div className="flex items-start gap-2.5 relative z-10 w-full">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] bg-green-500/10 border border-green-500/25 flex items-center justify-center text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.35)] shrink-0">
-                <User size={17} className="filter" style={{ filter: 'drop-shadow(0 0 3px #22C55E)' }} />
-              </div>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h4 className="text-[11px] sm:text-[12.5px] font-extrabold text-white tracking-wider uppercase leading-none">LOGIN DO APP</h4>
-                <p className="text-[8.5px] sm:text-[9.5px] text-[#C5C5C5] mt-1 leading-tight font-medium">Portal Copadubo</p>
-              </div>
-            </div>
-
-            {/* Bottom Section */}
-            <div className="flex items-end justify-between relative z-10 mt-auto w-full">
-              <div className="px-2 py-0.5 rounded-full bg-[var(--pc-primary)]/10 border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] text-[8px] sm:text-[9px] font-bold tracking-wide shadow-[0_0_6px_var(--pc-glow)] shrink-0">
-                Conectado
-              </div>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] group-hover:bg-[var(--pc-primary)]/15 group-hover:border-[var(--pc-primary-light)] group-hover:text-[var(--pc-primary-light)] transition-all flex items-center justify-center shrink-0">
-                <ChevronRight size={13} />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 2: ORGANIZADOR */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onSelectChannel('organizador')}
-            className="relative p-3 sm:p-3.5 h-[115px] sm:h-[130px] bg-[#030914]/15 backdrop-blur-xl border border-orange-500/25 rounded-[20px] sm:rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.2),0_0_8px_rgba(255,122,0,0.4)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.35),0_0_15px_rgba(255,122,0,0.4)] flex flex-col justify-between cursor-pointer group overflow-hidden transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-orange-500/5 to-transparent pointer-events-none" />
-
-            {/* Top Section */}
-            <div className="flex items-start gap-2.5 relative z-10 w-full">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] bg-orange-500/10 border border-orange-500/25 flex items-center justify-center text-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.4)] shrink-0">
-                <CheckSquare size={17} className="filter" style={{ filter: 'drop-shadow(0 0 3px #F97316)' }} />
-              </div>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h4 className="text-[11px] sm:text-[12.5px] font-extrabold text-white tracking-wider uppercase leading-none">ORGANIZADOR</h4>
-                <p className="text-[8.5px] sm:text-[9.5px] text-[#C5C5C5] mt-1 leading-tight font-medium">Notas e checklists</p>
-              </div>
-            </div>
-
-            {/* Bottom Section */}
-            <div className="flex items-end justify-between relative z-10 mt-auto w-full">
-              <div className="px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[8px] sm:text-[9px] font-bold tracking-wide shadow-[0_0_6px_rgba(255,122,0,0.2)] shrink-0">
-                Sincronizado
-              </div>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-orange-500/20 text-orange-400 group-hover:bg-orange-500/15 group-hover:border-orange-500-light group-hover:text-orange-300 transition-all flex items-center justify-center shrink-0">
-                <ChevronRight size={13} />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 6: CÁLCULO DE TICKETS */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onSelectChannel('tickets')}
-            className="relative p-3 sm:p-3.5 h-[115px] sm:h-[130px] bg-[#030914]/15 backdrop-blur-xl border border-[var(--pc-primary)]/25 rounded-[20px] sm:rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.2),0_0_8px_var(--pc-glow)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.35),0_0_15px_var(--pc-glow)] flex flex-col justify-between cursor-pointer group overflow-hidden transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-[var(--pc-primary)]/5 to-transparent pointer-events-none" />
-
-            {/* Top Section */}
-            <div className="flex items-start gap-2.5 relative z-10 w-full">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-[0_0_10px_rgba(14,165,233,0.35)] shrink-0">
-                <Calculator size={17} className="filter" style={{ filter: 'drop-shadow(0 0 3px #0EA5E9)' }} />
-              </div>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h4 className="text-[11px] sm:text-[12.5px] font-extrabold text-white tracking-wider uppercase leading-none">CÁLCULO TICKETS</h4>
-                <p className="text-[8.5px] sm:text-[9.5px] text-[#C5C5C5] mt-1 leading-tight font-medium">Calculadora de carga</p>
-              </div>
-            </div>
-
-            {/* Bottom Section */}
-            <div className="flex items-end justify-between relative z-10 mt-auto w-full">
-              <div className="px-2 py-0.5 rounded-full bg-[var(--pc-primary)]/10 border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] text-[8px] sm:text-[9px] font-bold tracking-wide shadow-[0_0_6px_var(--pc-glow)] shrink-0">
-                Ativo
-              </div>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] group-hover:bg-[var(--pc-primary)]/15 group-hover:border-[var(--pc-primary-light)] group-hover:text-[var(--pc-primary-light)] transition-all flex items-center justify-center shrink-0">
-                <ChevronRight size={13} />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 7: INFORMAÇÕES APPA */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => window.open('https://berth-bloom-buddy.lovable.app/', '_blank')}
-            className="relative p-3 sm:p-3.5 h-[115px] sm:h-[130px] bg-[#030914]/15 backdrop-blur-xl border border-[var(--pc-primary)]/25 rounded-[20px] sm:rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.2),0_0_8px_var(--pc-glow)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.35),0_0_15px_var(--pc-glow)] flex flex-col justify-between cursor-pointer group overflow-hidden transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-[var(--pc-primary)]/5 to-transparent pointer-events-none" />
-
-            {/* Top Section */}
-            <div className="flex items-start gap-2.5 relative z-10 w-full">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] bg-orange-500/10 border border-orange-500/25 flex items-center justify-center text-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.35)] shrink-0">
-                <Anchor size={17} className="filter" style={{ filter: 'drop-shadow(0 0 3px #F97316)' }} />
-              </div>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h4 className="text-[11px] sm:text-[12.5px] font-extrabold text-white tracking-wider uppercase leading-none">INFORMAÇÕES APPA</h4>
-                <p className="text-[8.5px] sm:text-[9.5px] text-[#C5C5C5] mt-1 leading-tight font-medium">Monitoramento online</p>
-              </div>
-            </div>
-
-            {/* Bottom Section */}
-            <div className="flex items-end justify-between relative z-10 mt-auto w-full">
-              <div className="px-2 py-0.5 rounded-full bg-[var(--pc-primary)]/10 border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] text-[8px] sm:text-[9px] font-bold tracking-wide shadow-[0_0_6px_var(--pc-glow)] shrink-0">
-                Tempo real
-              </div>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] group-hover:bg-[var(--pc-primary)]/15 group-hover:border-[var(--pc-primary-light)] group-hover:text-[var(--pc-primary-light)] transition-all flex items-center justify-center shrink-0">
-                <ChevronRight size={13} />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 8: CONTATOS WHATSAPP */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setShowWhatsappContacts(true)}
-            className="relative p-3 sm:p-3.5 h-[115px] sm:h-[130px] bg-[#030914]/15 backdrop-blur-xl border border-[var(--pc-primary)]/25 rounded-[20px] sm:rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.2),0_0_8px_var(--pc-glow)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.35),0_0_15px_var(--pc-glow)] flex flex-col justify-between cursor-pointer group overflow-hidden transition-all duration-300"
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-[var(--pc-primary)]/5 to-transparent pointer-events-none" />
-
-            {/* Top Section */}
-            <div className="flex items-start gap-2.5 relative z-10 w-full">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] bg-green-500/10 border border-green-500/25 flex items-center justify-center text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.35)] shrink-0">
-                <MessageCircle size={17} className="filter" style={{ filter: 'drop-shadow(0 0 3px #22C55E)' }} />
-              </div>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <h4 className="text-[11px] sm:text-[12.5px] font-extrabold text-white tracking-wider uppercase leading-none">CONTATOS WHATSAPP</h4>
-                <p className="text-[8.5px] sm:text-[9.5px] text-[#C5C5C5] mt-1 leading-tight font-medium">Plantões Copadubo</p>
-              </div>
-            </div>
-
-            {/* Bottom Section */}
-            <div className="flex items-end justify-between relative z-10 mt-auto w-full">
-              <div className="px-2 py-0.5 rounded-full bg-[var(--pc-primary)]/10 border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] text-[8px] sm:text-[9px] font-bold tracking-wide shadow-[0_0_6px_var(--pc-glow)] shrink-0">
-                Plantão 24h
-              </div>
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-[var(--pc-primary)]/20 text-[var(--pc-primary)] group-hover:bg-[var(--pc-primary)]/15 group-hover:border-[var(--pc-primary-light)] group-hover:text-[var(--pc-primary-light)] transition-all flex items-center justify-center shrink-0">
-                <ChevronRight size={13} />
-              </div>
-            </div>
-          </motion.div>
-
-
-
-
-
-          {/* Card: MOTORISTAS DISPONÍVEIS / FOLGUISTAS (col-span-2) */}
+        {/* 4. OTHER CARDS GRID */}
+        <div className="grid grid-cols-1 gap-4 mt-4">
+          {/* Card: TELA DE CAMINHÕES ATIVO */}
           <motion.div
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            onClick={() => onSelectChannel('folguistas')}
-            className="col-span-2 relative p-3 sm:p-3.5 h-[105px] sm:h-[120px] bg-[#030914]/15 backdrop-blur-xl border border-emerald-500/35 rounded-[20px] sm:rounded-[24px] shadow-[0_4px_15px_rgba(0,0,0,0.2),0_0_8px_rgba(16,185,129,0.3)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.35),0_0_15px_rgba(16,185,129,0.4)] flex items-center justify-between gap-3 sm:gap-4 cursor-pointer group overflow-hidden"
+            onClick={() => window.open('https://intranet.copadubo.com.br/ponto/', '_blank')}
+            className="p-5 bg-gradient-to-r from-blue-600 to-blue-400 rounded-3xl shadow-lg flex items-center justify-between cursor-pointer text-white"
           >
-            {/* Left side: Icon & Title/Description */}
-            <div className="flex items-center gap-3 sm:gap-4 flex-1">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)] shrink-0">
-                <UserCheck size={20} className="filter animate-pulse" style={{ filter: 'drop-shadow(0 0 4px #10B981)' }} />
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-2xl">
+                <Truck size={24} />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-[12px] sm:text-[14px] font-extrabold text-white tracking-wider uppercase leading-none">MOTORISTAS DISPONÍVEIS</h4>
-                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[7px] sm:text-[8px] font-black shadow-[0_0_6px_rgba(16,185,129,0.5)] animate-pulse uppercase tracking-wider">
-                    Folguistas & Extras
-                  </span>
-                </div>
-                <p className="text-[9.5px] sm:text-[10.5px] text-gray-400 mt-1 leading-snug max-w-xs sm:max-w-lg">
-                  Está sem trabalho ou quer contratar? Cadastre-se ou contate motoristas disponíveis direto pelo WhatsApp!
-                </p>
+              <div>
+                <h4 className="text-lg font-bold">Tela de caminhões ativo</h4>
+                <p className="text-sm opacity-90">Acompanhe os caminhões em tempo real</p>
               </div>
             </div>
-
-            {/* Right side: Circular button */}
-            <div className="flex items-center justify-center shrink-0 z-10 mr-0.5">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/15 group-hover:border-emerald-400 group-hover:text-emerald-300 transition-all flex items-center justify-center shadow-[0_0_8px_rgba(16,185,129,0.2)]">
-                <ChevronRight size={14} />
-              </div>
+            <div className="bg-white/20 p-2 rounded-xl">
+              <ChevronRight size={20} />
             </div>
           </motion.div>
+
+          {/* Card: LOGIN DO APLICATIVO */}
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => window.open('https://portal.copadubo.com.br/login.php', '_blank')}
+            className="p-5 bg-gradient-to-r from-cyan-500 to-cyan-300 rounded-3xl shadow-lg flex items-center justify-between cursor-pointer text-white"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-2xl">
+                <Lock size={24} />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold">Login do aplicativo</h4>
+                <p className="text-sm opacity-90">Acesse sua conta com segurança</p>
+              </div>
+            </div>
+            <div className="bg-white/20 p-2 rounded-xl">
+              <ChevronRight size={20} />
+            </div>
+          </motion.div>
+
+          {/* Card: INFORMAÇÕES APPA */}
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => onSelectChannel('appa')}
+            className="p-5 bg-gradient-to-r from-purple-600 to-purple-400 rounded-3xl shadow-lg flex items-center justify-between cursor-pointer text-white"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-2xl">
+                <FileText size={24} />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold">Informações APPA</h4>
+                <p className="text-sm opacity-90">Informações e comunicados oficiais</p>
+              </div>
+            </div>
+            <div className="bg-white/20 p-2 rounded-xl">
+              <ChevronRight size={20} />
+            </div>
+          </motion.div>
+
+          {/* Card: SINPRAPAR */}
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => window.open('https://sinprapar.com.br', '_blank')}
+            className="p-5 bg-gradient-to-r from-blue-900 to-blue-700 rounded-3xl shadow-lg flex items-center justify-between cursor-pointer text-white"
+          >
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-2xl">
+                <Users size={24} />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold">SINPRAPAR</h4>
+                <p className="text-sm opacity-90">Acesse o portal do sindicato</p>
+              </div>
+            </div>
+            <div className="bg-white/20 p-2 rounded-xl">
+              <ChevronRight size={20} />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* PORTO Separator */}
+        <div className="flex items-center gap-4 my-4">
+          <div className="h-px flex-1 bg-white/20" />
+          <span className="text-white font-bold tracking-widest text-sm">PORTO</span>
+          <div className="h-px flex-1 bg-white/20" />
+        </div>
+
+        {/* Cálculo de Frete Card */}
+        <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => onSelectChannel('frete')}
+            className="p-5 bg-gradient-to-r from-sky-400 to-sky-200 rounded-3xl shadow-lg cursor-pointer text-white"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h4 className="text-lg font-bold">Cálculo de Frete</h4>
+                <p className="text-sm opacity-90">Faça seus cálculos com agilidade</p>
+              </div>
+              <div className="bg-white/20 p-2 rounded-xl">
+                 <ChevronRight size={20} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+               <div className="bg-white/20 p-3 rounded-2xl flex flex-col items-center gap-1">
+                 <Plus size={20}/>
+                 <span className="text-xs font-bold">Somar</span>
+               </div>
+               <div className="bg-white/20 p-3 rounded-2xl flex flex-col items-center gap-1">
+                 <div className="w-5 h-0.5 bg-white rounded-full"></div>
+                 <span className="text-xs font-bold">Calcular</span>
+               </div>
+               <div className="bg-white/20 p-3 rounded-2xl flex flex-col items-center gap-1">
+                 <div className="w-5 h-0.5 bg-white rounded-full"></div>
+                 <span className="text-xs font-bold">Subtrair</span>
+               </div>
+            </div>
+          </motion.div>
+
+        {/* Card: CONTATOS OPERACIONAIS */}
+        <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => onSelectChannel('contatos')}
+            className="p-5 bg-gradient-to-r from-green-600 to-green-400 rounded-3xl shadow-lg flex items-center justify-between cursor-pointer text-white mt-4"
+        >
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-2xl">
+                <MessageCircle size={24} />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold">Contatos Operacionais</h4>
+                <p className="text-sm opacity-90">Fale direto com a operação</p>
+              </div>
+            </div>
+            <div className="bg-white/20 p-2 rounded-xl">
+              <ChevronRight size={20} />
+            </div>
+        </motion.div>
 
 
 
@@ -1793,9 +1660,6 @@ create table if not exists messages (
               <path d="M0 50 H30 L35 30 L40 70 L45 40 L50 60 L55 50 H100" />
             </svg>
           </motion.div>
-        </div>
-
-        </div>
 
         {/* 5. BOTTOM NAVIGATION BAR - EXACTLY LIKE UPLOADED IMAGE (4 GLOWING CIRCULAR BUTTONS CONNECTED BY VIBRATING WAVE LINES, NO TEXT LABELS) */}
         <nav className="bg-[#020712]/95 border border-white/10 rounded-[32px] px-5 sm:px-6 flex justify-between items-center shadow-[0_0_40px_rgba(0,0,0,0.6)] relative overflow-hidden h-[92px] w-full max-w-md mx-auto mb-2">
@@ -3366,6 +3230,7 @@ create table if not exists messages (
       {/* Floating Google-style Weather Widget */}
       <WeatherWidget />
 
+      </div>
     </div>
   );
 }
